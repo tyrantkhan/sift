@@ -23,8 +23,10 @@ const (
 	lockFile    = "lock"
 	sessionLock = "review.lock"
 	latestFile  = "latest"
-	lockTimeout = 3 * time.Second
 )
+
+// lockTimeout is how long a command waits for another to release a run. A variable so tests can shorten it.
+var lockTimeout = 3 * time.Second
 
 var idPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,80}$`)
 
