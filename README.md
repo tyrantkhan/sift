@@ -28,6 +28,9 @@ Every decision saves at once, so you can quit and come back with `sift review --
 ## Install the CLI
 
 ```sh
+# Script: installs the latest release to ~/.local/bin after checking its checksum
+curl -sSL https://tyrantkhan.github.io/sift/install.sh | sh
+
 # Homebrew (macOS and Linux)
 brew install --cask tyrantkhan/tap/sift
 
