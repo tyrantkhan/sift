@@ -41,6 +41,16 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
+      # The same app that opens release PRs pushes the cask, through a short-lived token that can only
+      # write homebrew-tap's contents, so no personal access token is stored.
+      - name: Generate Homebrew tap token
+        id: tap-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          repositories: homebrew-tap
+          permission-contents: write
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v7
         with:
@@ -48,7 +58,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ steps.tap-token.outputs.token }}
           MACOS_SIGN_P12: ${{ secrets.MACOS_SIGN_P12 }}
           MACOS_SIGN_PASSWORD: ${{ secrets.MACOS_SIGN_PASSWORD }}
           MACOS_NOTARY_ISSUER_ID: ${{ secrets.MACOS_NOTARY_ISSUER_ID }}
