@@ -64,8 +64,8 @@ case ":${PATH}:" in
         echo ""
         SHELL_NAME="$(basename "${SHELL:-sh}")"
         case "$SHELL_NAME" in
-            zsh) RC_FILE="~/.zshrc" ;;
-            bash) RC_FILE="~/.bashrc" ;;
+            zsh) RC_FILE="${HOME}/.zshrc" ;;
+            bash) RC_FILE="${HOME}/.bashrc" ;;
             *) RC_FILE="" ;;
         esac
         if [ "$SHELL_NAME" = "fish" ]; then
