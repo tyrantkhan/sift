@@ -15,8 +15,9 @@ import (
 	"github.com/tyrantkhan/sift/internal/run"
 )
 
-// Version is this build's version. Every plugin manifest carries the same one, which a test checks.
-const Version = "0.1.0"
+// Version is this build's version. release-please bumps it with every plugin manifest, which a test keeps in
+// step; release builds also set it with -ldflags.
+var Version = "0.1.0" // x-release-please-version
 
 type Env struct {
 	Args   []string
