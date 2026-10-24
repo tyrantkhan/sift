@@ -11,12 +11,6 @@ permissions:
 jobs:
   test:
     name: Test (${{ matrix.os }})
-    # The coverage report reads earlier runs' artifacts, comments on the PR and sets commit statuses.
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-      statuses: write
     strategy:
       fail-fast: false
       matrix:
@@ -30,20 +24,15 @@ jobs:
           go-version-file: "go.mod"
       - run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
       - run: go build -v ./cmd/sift
-      # Coverage is the same on both systems, so one report is enough. Statuses are informational until
-      # thresholds are chosen, so coverage never blocks a merge.
-      - name: Coverage
+      # Coverage is the same on both systems, so one upload is enough. A failed upload, such as during a
+      # Codecov outage, does not fail the required test check.
+      - name: Upload coverage to Codecov
         if: matrix.os == 'ubuntu-latest'
-        uses: getsentry/coverage-action@b3db4e382bd9859c913a96093a3d369b67f59177 # 0.4.4
+        uses: codecov/codecov-action@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
-          coverage-format: go
-          disable-search: true
-          enable-tests: false
-          post-pr-comment: true
-          informational-project: true
-          informational-patch: true
+          disable_search: true
 
   lint:
     name: Lint
