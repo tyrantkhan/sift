@@ -2,6 +2,8 @@
 
 # sift
 
+[![codecov](https://codecov.io/gh/tyrantkhan/sift/graph/badge.svg)](https://codecov.io/gh/tyrantkhan/sift)
+
 An agent reviews a plan, a spec or code and hands you 30 findings in one scrolling list. sift shows them to you one at a time instead, most severe first. You decide each with one key, and your decisions go back to the agent, which applies them.
 
 Inspired by [loupe](https://github.com/eriksaulnier/loupe), which does the same for GitHub pull request reviews.

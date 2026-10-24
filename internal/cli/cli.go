@@ -26,6 +26,10 @@ type Env struct {
 	Stderr io.Writer
 	Getenv func(string) string
 	Now    func() time.Time
+	// Terminal reports whether stdin and stdout are an interactive terminal, and Review runs the review
+	// interface; both default to the real ones and exist so tests can drive sift review.
+	Terminal func() bool
+	Review   func(root, id string) (published bool, err error)
 }
 
 type command struct {

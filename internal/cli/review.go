@@ -43,7 +43,14 @@ func cmdReview(env *Env, args []string) error {
 	if err != nil {
 		return err
 	}
-	if !isTerminal(os.Stdin) || !isTerminal(os.Stdout) || env.Getenv("TERM") == "dumb" {
+	terminal, review := env.Terminal, env.Review
+	if terminal == nil {
+		terminal = func() bool { return isTerminal(os.Stdin) && isTerminal(os.Stdout) }
+	}
+	if review == nil {
+		review = tui.Run
+	}
+	if !terminal() || env.Getenv("TERM") == "dumb" {
 		return &run.Refusal{Code: "tty", Message: "sift review needs an interactive terminal",
 			Fix: "the human runs sift review --run " + t.id + " in their own terminal"}
 	}
@@ -52,7 +59,7 @@ func cmdReview(env *Env, args []string) error {
 		return err
 	}
 	defer release()
-	published, err := tui.Run(t.root, t.id)
+	published, err := review(t.root, t.id)
 	if err != nil {
 		return err
 	}
