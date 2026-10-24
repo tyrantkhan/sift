@@ -101,3 +101,41 @@ func TestHerdrIsDetectedFirst(t *testing.T) {
 		t.Fatalf("without HERDR_ENV=1, detect = %v, want tmux", h.Name())
 	}
 }
+
+// fakeHerdrSplit answers pane layout normally and pane split with splitOut and exit code, recording every call.
+func fakeHerdrSplit(t *testing.T, splitOut string, splitExit int) (path, log string) {
+	t.Helper()
+	dir := t.TempDir()
+	log = filepath.Join(dir, "calls")
+	script := "#!/bin/sh\nprintf '%s\\n' \"$*\" >> " + ShellQuote(log) + "\n" +
+		"case \"$1 $2\" in\n" +
+		"  'pane layout') printf '%s' " + ShellQuote(layoutWith("p1", 200, 50)) + ";;\n" +
+		"  'pane split') printf '%s' " + ShellQuote(splitOut) + "; exit " + strconv.Itoa(splitExit) + ";;\n" +
+		"esac\n"
+	path = filepath.Join(dir, "herdr")
+	if err := os.WriteFile(path, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	return path, log
+}
+
+func TestHerdrStopsWhenTheSplitFails(t *testing.T) {
+	// A failed split prints its reason on stdout only, which the error carries.
+	path, log := fakeHerdrSplit(t, "no room for a pane", 1)
+	err := herdr{path: path, pane: "p1"}.Open(context.Background(), []string{"sift"})
+	if err == nil || !strings.Contains(err.Error(), "no room for a pane") {
+		t.Fatalf("err = %v, want the split's own message", err)
+	}
+	if got := herdrCalls(t, log); len(got) != 2 {
+		t.Fatalf("nothing should run after a failed split, calls = %q", got)
+	}
+
+	path, log = fakeHerdrSplit(t, `{"result":{}}`, 0)
+	err = herdr{path: path, pane: "p1"}.Open(context.Background(), []string{"sift"})
+	if err == nil || !strings.Contains(err.Error(), "did not report its new pane") {
+		t.Fatalf("err = %v, want a missing pane id refused", err)
+	}
+	if got := herdrCalls(t, log); len(got) != 2 {
+		t.Fatalf("nothing should run without a pane id, calls = %q", got)
+	}
+}
