@@ -52,3 +52,5 @@ jobs:
           version: v2.15.0
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - name: shellcheck
+        run: shellcheck -s sh install.sh
