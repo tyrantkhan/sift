@@ -52,7 +52,7 @@ Then run `sift summary --run <run> --text "<2-4 sentences>"`: what you reviewed,
 
 ## 4. Hand off
 
-Run `sift handoff --run <run>`. It opens the review in a pane beside yours (tmux, Orca or iTerm2).
+Run `sift handoff --run <run>`. It opens the review in a pane beside yours (Herdr, tmux, Orca or iTerm2).
 
 - On `no-pane-host` or `pane-failed`, tell the human to run the command in `error.fix` in another terminal.
 - On `review-open`, tell the human their review is already open, and go to step 5.
