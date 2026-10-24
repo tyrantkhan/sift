@@ -4,6 +4,7 @@ package pane
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -25,6 +26,12 @@ func Detect(getenv func(string) string) (Host, bool) {
 }
 
 func detect(getenv func(string) string, goos string, lookPath func(string) (string, error)) (Host, bool) {
+	// Herdr sets these in the panes it manages. It comes first: a Herdr pane may run inside tmux.
+	if pane := getenv("HERDR_PANE_ID"); getenv("HERDR_ENV") == "1" && pane != "" {
+		if p, err := lookPath("herdr"); err == nil {
+			return herdr{path: p, pane: pane}, true
+		}
+	}
 	if getenv("TMUX") != "" {
 		if p, err := lookPath("tmux"); err == nil {
 			return tmux{path: p, pane: getenv("TMUX_PANE")}, true
@@ -105,18 +112,28 @@ func shellLine(argv []string) string {
 	return strings.Join(q, " ")
 }
 
-func runCmd(ctx context.Context, name string, args ...string) error {
+// runCmd runs a host's command and returns what it printed. A failure carries the host's own message: the error
+// field of a JSON reply on stderr when there is one, as Herdr prints, else stderr or stdout as printed.
+func runCmd(ctx context.Context, name string, args ...string) ([]byte, error) {
 	var stderr, stdout bytes.Buffer
 	c := exec.CommandContext(ctx, name, args...)
 	c.Stdout, c.Stderr = &stdout, &stderr
 	if err := c.Run(); err != nil {
+		var reply struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
 		msg := strings.TrimSpace(stderr.String())
+		if json.Unmarshal(stderr.Bytes(), &reply) == nil && reply.Error.Message != "" {
+			msg = reply.Error.Message
+		}
 		if msg == "" {
 			msg = strings.TrimSpace(stdout.String())
 		}
-		return fmt.Errorf("%s: %w: %s", name, err, msg)
+		return nil, fmt.Errorf("%s: %w: %s", name, err, msg)
 	}
-	return nil
+	return stdout.Bytes(), nil
 }
 
 type tmux struct{ path, pane string }
@@ -131,7 +148,8 @@ func (t tmux) Open(ctx context.Context, argv []string) error {
 	if t.pane != "" {
 		args = append(args, "-t", t.pane)
 	}
-	return runCmd(ctx, t.path, append(args, shellLine(argv))...)
+	_, err := runCmd(ctx, t.path, append(args, shellLine(argv))...)
+	return err
 }
 
 // paneSize asks tmux for the agent's pane size, or 0×0 when it cannot say.
@@ -167,8 +185,9 @@ func (o orca) Open(ctx context.Context, argv []string) error {
 	if !below(ttySize()) {
 		divider = "vertical"
 	}
-	return runCmd(ctx, o.path, "terminal", "split", "--terminal", o.handle, "--direction", divider,
+	_, err := runCmd(ctx, o.path, "terminal", "split", "--terminal", o.handle, "--direction", divider,
 		"--command", shellLine(argv), "--json")
+	return err
 }
 
 type iterm struct{ path, session string }
@@ -204,5 +223,6 @@ func (i iterm) Open(ctx context.Context, argv []string) error {
 	end repeat
 	error "agent session not found"
 end tell`
-	return runCmd(ctx, i.path, "-e", script)
+	_, err := runCmd(ctx, i.path, "-e", script)
+	return err
 }

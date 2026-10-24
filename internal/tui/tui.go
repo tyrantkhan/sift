@@ -618,7 +618,7 @@ func (m *Model) updateFinish(k tea.KeyPressMsg) tea.Cmd {
 		}
 		m.setRun(r)
 		m.leaveFinish(modeDone)
-		// Exiting closes the pane in tmux, Orca and iTerm2, so the human lands back with the agent.
+		// Exiting closes the pane in Herdr, tmux, Orca and iTerm2, so the human lands back with the agent.
 		return tea.Quit
 	}
 	if !m.run.Ready() {
