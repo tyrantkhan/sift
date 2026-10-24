@@ -309,6 +309,7 @@ func cmdSummary(env *Env, args []string) error {
 const handoffHelp = `Usage: sift handoff [--run <id>]
 
 Open sift review for the human in a new pane beside the agent's, then return. Hosts, first detected wins:
+  herdr   HERDR_ENV=1 and HERDR_PANE_ID set, and herdr on PATH
   tmux    TMUX set and tmux on PATH
   orca    ORCA_TERMINAL_HANDLE set and orca on PATH
   iterm   TERM_PROGRAM=iTerm.app on macOS (splits the agent's own session)
@@ -355,7 +356,7 @@ func cmdHandoff(env *Env, args []string) error {
 	fix := "ask the human to run this in another terminal: " + strings.Join(quoteAll(argv), " ")
 	host, ok := pane.Detect(env.Getenv)
 	if !ok {
-		return &run.Refusal{Code: "no-pane-host", Message: "no supported terminal host (tmux, orca, iTerm2) detected", Fix: fix}
+		return &run.Refusal{Code: "no-pane-host", Message: "no supported terminal host (Herdr, tmux, Orca, iTerm2) detected", Fix: fix}
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()

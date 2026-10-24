@@ -101,7 +101,7 @@ Update the CLI whenever you update the skill, since a newer skill can use a flag
 
 If your agent asks before each shell command, allow `sift` commands (in Claude Code, `Bash(sift:*)`).
 
-`sift handoff` opens the pane in tmux, Orca or iTerm2. Elsewhere it prints the `sift review` command for you to run in another terminal.
+`sift handoff` opens the pane in [Herdr](https://herdr.dev), tmux, Orca or iTerm2. Elsewhere it prints the `sift review` command for you to run in another terminal.
 
 ## Commands
 
