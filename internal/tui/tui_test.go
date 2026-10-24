@@ -618,3 +618,94 @@ func TestPasteReachesTheFinishNote(t *testing.T) {
 		t.Fatalf("note = %q, want the paste", m.note.Value())
 	}
 }
+
+func TestListShowsEveryStateAndNavigates(t *testing.T) {
+	m := modelWith(t, "Codex", 80, 30,
+		run.NewFinding{Title: "approve me", Body: "b", Severity: "critical"},
+		run.NewFinding{Title: "tweak me", Body: "b", Severity: "major"},
+		run.NewFinding{Title: "reject me", Body: "b", Severity: "minor"},
+		run.NewFinding{Title: "ask me", Body: "b", Severity: "trivial"},
+		run.NewFinding{Title: "leave me", Body: "b"},
+	)
+	m = press(t, m, "enter", "a", "s", "short", "enter", "x", "d", "why?", "enter", "l")
+	if m.mode != modeList {
+		t.Fatalf("mode = %v, want list", m.mode)
+	}
+	list := screen(m)
+	for _, want := range []string{"✓", "✎", "✗", "…", "○", "approve me", "leave me"} {
+		if !strings.Contains(list, want) {
+			t.Fatalf("list lacks %q:\n%s", want, list)
+		}
+	}
+	m = press(t, m, "k", "k", "k", "k", "k")
+	if m.listCur != 0 {
+		t.Fatalf("listCur = %d after moving up past the top", m.listCur)
+	}
+	m = press(t, m, "j", "enter")
+	if m.mode != modeCard || m.current().Title != "tweak me" {
+		t.Fatalf("enter should open the second finding, got %q in mode %v", m.current().Title, m.mode)
+	}
+	m = press(t, m, "l", "esc")
+	if m.mode != modeCard {
+		t.Fatalf("esc should leave the list, mode = %v", m.mode)
+	}
+	m = press(t, m, "l", "f")
+	if m.mode != modeFinish {
+		t.Fatalf("f from the list should open finish, mode = %v", m.mode)
+	}
+	if next, cmd := press(t, m, "esc", "esc").Update(key("q")); cmd == nil || next.(Model).mode != modeCard {
+		t.Fatal("q should quit")
+	}
+}
+
+func TestInputBoxNamesWhatItDoes(t *testing.T) {
+	m := press(t, setup(t), "enter")
+	for k, want := range map[string]string{"s": "Your tweak, for Codex to apply", "d": "Your question for Codex", "X": "Why reject it?"} {
+		mm := press(t, m, k)
+		if mm.mode != modeInput || !strings.Contains(screen(mm), want) {
+			t.Errorf("%s: mode %v, want %q on screen:\n%s", k, mm.mode, want, screen(mm))
+		}
+	}
+	if mm := press(t, m, "s", "enter"); mm.mode != modeInput || !strings.Contains(mm.flash, "Type something first") {
+		t.Errorf("an empty tweak should stay open with a hint, flash = %q", mm.flash)
+	}
+}
+
+func TestReopeningASentRunShowsItWasSent(t *testing.T) {
+	m := modelWith(t, "Codex", 80, 30, run.NewFinding{Title: "t", Body: "b"})
+	if _, err := run.Update(m.root, m.id, func(r *run.Run, _ run.Docs) error {
+		if err := r.Decide("F1", nil, run.Approved, "", time.Now()); err != nil {
+			return err
+		}
+		return r.Publish("", time.Now())
+	}); err != nil {
+		t.Fatal(err)
+	}
+	m, err := newModel(m.root, m.id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 30})
+	m = next.(Model)
+	if m.mode != modeDone || !strings.Contains(screen(m), "Sent to Codex") {
+		t.Fatalf("mode = %v:\n%s", m.mode, screen(m))
+	}
+	if m.Init() == nil {
+		t.Fatal("Init should start the reload tick and ask for the background color")
+	}
+	if _, cmd := m.Update(key("x")); cmd == nil {
+		t.Fatal("any key on the done screen should close it")
+	}
+}
+
+func TestLightBackgroundSwitchesTheTheme(t *testing.T) {
+	m := press(t, setup(t), "enter")
+	next, _ := m.Update(tea.BackgroundColorMsg{Color: lipgloss.Color("#FFFFFF")})
+	m = next.(Model)
+	if m.th.dark || m.md.dark {
+		t.Fatal("a white background should switch to the light theme")
+	}
+	if !strings.Contains(screen(m), "If you approve, Codex will") {
+		t.Fatal("the card should still render after the switch")
+	}
+}
