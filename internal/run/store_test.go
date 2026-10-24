@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -255,5 +256,95 @@ func TestExcerptClampsToTheFile(t *testing.T) {
 	}
 	if lines, omitted := d.Excerpt(Anchor{StartLine: 1, EndLine: 3}, 2); len(lines) != 2 || omitted != 1 {
 		t.Errorf("capped: %q %d", lines, omitted)
+	}
+}
+
+func TestCreateEdgeCases(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.md"), []byte("# a\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	st := Start{Paths: []string{"a.md"}, Cwd: dir, Title: "same"}
+	if _, err := Create(root, st, now); err != nil {
+		t.Fatal(err)
+	}
+	// Two rounds with the same title in the same second would share an id.
+	if _, err := Create(root, st, now); code(err) != "run-exists" {
+		t.Errorf("same id twice: err = %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Create(root, Start{Paths: []string{"sub"}, Cwd: dir}, now); code(err) != "file-unreadable" {
+		t.Errorf("a directory: err = %v", err)
+	}
+	many := make([]string, maxFiles+1)
+	for i := range many {
+		many[i] = filepath.Join(dir, "f"+strconv.Itoa(i)+".txt")
+		if err := os.WriteFile(many[i], []byte("x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := Create(t.TempDir(), Start{Paths: many, Cwd: dir}, now); code(err) != "invalid-args" {
+		t.Errorf("%d files: err = %v", len(many), err)
+	}
+	r, err := Create(t.TempDir(), Start{Paths: []string{"a.md"}, Cwd: dir, Title: "  ~~~  "}, now)
+	if err != nil || !strings.HasPrefix(r.ID, "review-") {
+		t.Errorf("a title with no usable letters should fall back to a review- id: %v %v", r, err)
+	}
+}
+
+func TestLockWaitsThenRefuses(t *testing.T) {
+	root, r := newRun(t)
+	defer func(d time.Duration) { lockTimeout = d }(lockTimeout)
+	lockTimeout = 50 * time.Millisecond
+	unlock, err := lock(Dir(root, r.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Update(root, r.ID, func(*Run, Docs) error { return nil }); code(err) != "locked" {
+		t.Fatalf("while another holds the lock: err = %v", err)
+	}
+	unlock()
+	if _, err := Update(root, r.ID, func(*Run, Docs) error { return nil }); err != nil {
+		t.Fatalf("after release: %v", err)
+	}
+}
+
+func TestLoadNeedsEverySnapshot(t *testing.T) {
+	root, r := newRun(t)
+	if err := os.Remove(snapshotPath(Dir(root, r.ID), 0)); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := Load(root, r.ID); err == nil || !strings.Contains(err.Error(), "snapshot") {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestAmbiguousAnchorPathIsRefused(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"README.md", "svc/README.md"} {
+		if err := os.MkdirAll(filepath.Dir(filepath.Join(dir, name)), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("# r\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	root := t.TempDir()
+	r, err := Create(root, Start{Paths: []string{"README.md", "svc/README.md"}, Cwd: dir}, now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = Update(root, r.ID, func(r *Run, d Docs) error {
+		_, err := r.Add(d, filepath.Join(dir, "svc"), []NewFinding{{Title: "t", Body: "b", Anchor: &AnchorInput{Path: "README.md", StartLine: 1}}})
+		return err
+	})
+	if code(err) != "invalid-anchor" || !strings.Contains(err.Error(), "could mean README.md or svc/README.md") {
+		t.Fatalf("err = %v", err)
+	}
+	if err := r.SetSummary("  two READMEs  "); err != nil || r.Summary != "two READMEs" {
+		t.Fatalf("SetSummary: %v %q", err, r.Summary)
 	}
 }

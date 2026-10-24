@@ -3,6 +3,7 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -432,11 +433,13 @@ func modelWith(t *testing.T, agent string, w, h int, findings ...run.NewFinding)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := run.Update(root, r.ID, func(r *run.Run, d run.Docs) error {
-		_, err := r.Add(d, "", findings)
-		return err
-	}); err != nil {
-		t.Fatal(err)
+	if len(findings) > 0 {
+		if _, err := run.Update(root, r.ID, func(r *run.Run, d run.Docs) error {
+			_, err := r.Add(d, "", findings)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
 	}
 	m, err := newModel(root, r.ID)
 	if err != nil {
@@ -707,5 +710,202 @@ func TestLightBackgroundSwitchesTheTheme(t *testing.T) {
 	}
 	if !strings.Contains(screen(m), "If you approve, Codex will") {
 		t.Fatal("the card should still render after the switch")
+	}
+}
+
+func TestManyFindingsShowAProportionalBar(t *testing.T) {
+	var fs []run.NewFinding
+	for i := range 30 {
+		fs = append(fs, run.NewFinding{Title: "finding " + strconv.Itoa(i), Body: "b"})
+	}
+	m := modelWith(t, "Codex", 64, 24, fs...)
+	m = press(t, m, "enter", "a", "a", "a")
+	header := ansi.Strip(strings.Split(m.render(), "\n")[0])
+	// 30 cells would not fit in a third of 64 columns, so the bar scales: 3 of 30 decided.
+	if !strings.Contains(header, "3/30") || strings.Count(header, "▮")+strings.Count(header, "▯") >= 30 {
+		t.Fatalf("header = %q, want a scaled bar", header)
+	}
+}
+
+func TestCardDetails(t *testing.T) {
+	dir := t.TempDir()
+	var long strings.Builder
+	long.WriteString("# Plan\n\n## Big\n")
+	for i := range 60 {
+		long.WriteString("line " + strconv.Itoa(i) + "\n")
+	}
+	for _, f := range []struct{ name, body string }{{"plan.md", long.String()}, {"store.go", "package store\n"}} {
+		if err := os.WriteFile(filepath.Join(dir, f.name), []byte(f.body), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	root := t.TempDir()
+	r, err := run.Create(root, run.Start{Paths: []string{"plan.md", "store.go"}, Cwd: dir, Agent: "Codex"}, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := run.Update(root, r.ID, func(r *run.Run, d run.Docs) error {
+		if _, err := r.Add(d, "", []run.NewFinding{
+			{Title: "big section", Body: "b", Label: "risk", Severity: "major", Anchor: &run.AnchorInput{Path: "plan.md", Heading: "Big"}},
+			{Title: "small", Body: "b", Severity: "minor", Anchor: &run.AnchorInput{Path: "store.go", StartLine: 1}},
+		}); err != nil {
+			return err
+		}
+		if err := r.Decide("F1", nil, run.Discuss, "why?", time.Now()); err != nil {
+			return err
+		}
+		title := "big section, revised"
+		return r.Reply("F1", "sharper now", run.Revision{Title: &title}, false, time.Now())
+	}); err != nil {
+		t.Fatal(err)
+	}
+	m, err := newModel(root, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 90, Height: 30})
+	m = press(t, next.(Model), "enter")
+	card := screen(m)
+	for _, want := range []string{"risk", "revised 1×", "plan.md", "Big", "↓ more"} {
+		if !strings.Contains(card, want) {
+			t.Fatalf("card lacks %q:\n%s", want, card)
+		}
+	}
+	if !strings.Contains(ansi.Strip(m.cardContent()), "21 more lines") {
+		t.Fatalf("a 61-line section should show 40 lines and say how many more:\n%s", ansi.Strip(m.cardContent()))
+	}
+	m.vp.GotoBottom()
+	m.refresh(false)
+	if !strings.Contains(screen(m), "↑ top") {
+		t.Fatalf("at the bottom the card should offer the way back up:\n%s", screen(m))
+	}
+	if list := screen(press(t, m, "l")); !strings.Contains(list, "plan.md") || !strings.Contains(list, "store.go") {
+		t.Fatalf("a multi-file list should name each finding's file:\n%s", list)
+	}
+}
+
+func TestEmptyRunKeys(t *testing.T) {
+	m := modelWith(t, "Codex", 80, 30)
+	if mm := press(t, m, "?"); mm.mode != modeHelp || !strings.Contains(screen(mm), "Keys") {
+		t.Fatalf("? on the intro should open help in a frame:\n%s", screen(mm))
+	}
+	m = press(t, m, "enter")
+	if !strings.Contains(screen(m), "No findings in this run yet") {
+		t.Fatalf("empty card:\n%s", screen(m))
+	}
+	if mm := press(t, m, "?"); mm.mode != modeHelp {
+		t.Fatalf("? on an empty card should open help, mode = %v", mm.mode)
+	}
+	if mm := press(t, m, "a"); mm.mode != modeCard {
+		t.Fatal("decision keys on an empty card should do nothing")
+	}
+	for _, mm := range []Model{m, modelWith(t, "Codex", 80, 30)} {
+		if _, cmd := mm.Update(key("q")); cmd == nil {
+			t.Fatal("q should quit")
+		}
+	}
+}
+
+func TestWithdrawnFindingAsksToBeReinstated(t *testing.T) {
+	m := modelWith(t, "Codex", 80, 30, run.NewFinding{Title: "t", Body: "b"}, run.NewFinding{Title: "u", Body: "b"})
+	m = press(t, m, "enter", "d", "really?", "enter")
+	if _, err := run.Update(m.root, m.id, func(r *run.Run, _ run.Docs) error {
+		return r.Reply("F1", "no, dropping it", run.Revision{}, true, time.Now())
+	}); err != nil {
+		t.Fatal(err)
+	}
+	next, _ := m.Update(tickMsg(time.Now()))
+	m = next.(Model)
+	if !strings.Contains(m.flash, "Codex answered F1. Press l to jump there.") {
+		t.Fatalf("flash = %q", m.flash)
+	}
+	m.cur = m.indexOf("F1")
+	m.refresh(true)
+	if !strings.Contains(screen(m), "withdrawn by Codex") {
+		t.Fatalf("card:\n%s", screen(m))
+	}
+	if m = press(t, m, "s"); m.mode != modeCard || !strings.Contains(m.flash, "withdrew this one. Press u") {
+		t.Fatalf("a withdrawn finding should not open the tweak box, flash = %q", m.flash)
+	}
+	if m = press(t, m, "u"); status(t, m, "F1") != run.Pending {
+		t.Fatal("u should reinstate it")
+	}
+}
+
+func TestEditingKeepsTheEarlierNote(t *testing.T) {
+	m := modelWith(t, "Codex", 80, 30, run.NewFinding{Title: "t", Body: "b"}, run.NewFinding{Title: "u", Body: "b"})
+	m = press(t, m, "enter", "s", "first tweak", "enter", "esc", "b")
+	if m = press(t, m, "s"); m.ta.Value() != "first tweak" {
+		t.Fatalf("tweaking again should start from the earlier tweak, got %q", m.ta.Value())
+	}
+	m = press(t, m, "esc", "X", "too risky", "enter", "esc", "b")
+	if m = press(t, m, "X"); m.ta.Value() != "too risky" {
+		t.Fatalf("rejecting again should start from the earlier reason, got %q", m.ta.Value())
+	}
+}
+
+func TestFailuresShowInTheFlash(t *testing.T) {
+	m := modelWith(t, "Codex", 80, 30, run.NewFinding{Title: "t", Body: "b"})
+	m = settle(press(t, m, "enter", "a"))
+	// Another session sent the run while this screen still shows it unsent.
+	if _, err := run.Update(m.root, m.id, func(r *run.Run, _ run.Docs) error { return r.Publish("", time.Now()) }); err != nil {
+		t.Fatal(err)
+	}
+	if m = press(t, m, "enter"); !strings.Contains(m.flash, "Not sent") {
+		t.Fatalf("flash = %q", m.flash)
+	}
+	if err := os.Remove(filepath.Join(run.Dir(m.root, m.id), "run.json")); err != nil {
+		t.Fatal(err)
+	}
+	m.mode = modeCard
+	next, _ := m.Update(tickMsg(time.Now()))
+	if m = next.(Model); !strings.Contains(m.flash, "Could not reload the run") {
+		t.Fatalf("flash = %q", m.flash)
+	}
+}
+
+func TestWindowTooSmallOrUnsized(t *testing.T) {
+	m, err := newModel(setup(t).root, setup(t).id)
+	if err == nil {
+		if !strings.Contains(m.render(), "loading") {
+			t.Fatalf("before the first size: %q", m.render())
+		}
+	}
+	mm := setup(t)
+	next, _ := mm.Update(tea.WindowSizeMsg{Width: 40, Height: 10})
+	if got := next.(Model).render(); !strings.Contains(got, "at least 50×14 (now 40×10)") {
+		t.Fatalf("tiny window: %q", got)
+	}
+}
+
+func TestIntroShowsTheSummaryAndShortensLongFileLists(t *testing.T) {
+	dir := t.TempDir()
+	var paths []string
+	for i := range 8 {
+		name := "a-rather-long-file-name-" + strconv.Itoa(i) + ".md"
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("# x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		paths = append(paths, name)
+	}
+	root := t.TempDir()
+	r, err := run.Create(root, run.Start{Paths: paths, Cwd: dir}, time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := run.Update(root, r.ID, func(r *run.Run, _ run.Docs) error { return r.SetSummary("Checked the **rollout**.") }); err != nil {
+		t.Fatal(err)
+	}
+	m, err := newModel(root, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	next, _ := m.Update(tea.WindowSizeMsg{Width: 80, Height: 30})
+	intro := screen(next.(Model))
+	if !strings.Contains(intro, "and 7 more files") || !strings.Contains(intro, "Checked the rollout.") {
+		t.Fatalf("intro:\n%s", intro)
+	}
+	if mm := press(t, next.(Model), "?"); mm.mode != modeHelp {
+		t.Fatal("? on the intro should open help")
 	}
 }
