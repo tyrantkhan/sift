@@ -3,9 +3,10 @@ coverage:
   status:
     project:
       default:
-        # Total coverage may not drop below the base commit's.
+        # Total coverage may not drop below the base commit's, beyond 0.05% of slack so that deleting
+        # well-covered code does not fail the gate on rounding.
         target: auto
-        threshold: 0%
+        threshold: 0.05%
     patch:
       default:
         # At least 90% of the lines a pull request changes must be covered.
