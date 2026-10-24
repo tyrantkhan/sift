@@ -22,8 +22,17 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
-      - run: go test -race ./...
+      - run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
       - run: go build -v ./cmd/sift
+      # Coverage is the same on both systems, so one upload is enough. A failed upload, such as during a
+      # Codecov outage, does not fail the required test check.
+      - name: Upload coverage to Codecov
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.out
+          disable_search: true
 
   lint:
     name: Lint
