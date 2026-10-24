@@ -28,8 +28,17 @@ Every decision saves at once, so you can quit and come back with `sift review --
 ## Install the CLI
 
 ```sh
+# Homebrew (macOS and Linux)
+brew install --cask tyrantkhan/tap/sift
+
+# mise
+mise use -g github:tyrantkhan/sift
+
+# Go
 go install github.com/tyrantkhan/sift/cmd/sift@latest
 ```
+
+Each [release](https://github.com/tyrantkhan/sift/releases) also has archives for macOS and Linux on amd64 and arm64, with a `checksums.txt`. macOS builds are signed and notarized.
 
 ## Teach your agent
 
