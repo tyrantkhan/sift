@@ -454,7 +454,7 @@ func TestEncodedEscapesInMarkdownAreDefused(t *testing.T) {
 	})
 	m = press(t, m, "enter")
 	card := m.cardContent()
-	for _, bad := range []string{"\x1b[8m", "\x1b]8;;https://evil", "‮"} {
+	for _, bad := range []string{"\x1b[8m", "\x1b]8;;https://evil", "\u202e"} {
 		if strings.Contains(card, bad) {
 			t.Fatalf("card contains %q from an encoded entity", bad)
 		}

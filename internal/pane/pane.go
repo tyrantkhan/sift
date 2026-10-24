@@ -78,7 +78,8 @@ func ttySize() (int, int) {
 	if err != nil {
 		return 0, 0
 	}
-	defer f.Close()
+	// Opened read-only to read its size, so closing it cannot lose anything.
+	defer func() { _ = f.Close() }()
 	w, h, err := term.GetSize(f.Fd())
 	if err != nil {
 		return 0, 0
@@ -89,7 +90,7 @@ func ttySize() (int, int) {
 // ShellQuote quotes s for a POSIX shell.
 func ShellQuote(s string) string {
 	if s != "" && strings.IndexFunc(s, func(r rune) bool {
-		return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || strings.ContainsRune("-_./:=@", r))
+		return (r < 'a' || r > 'z') && (r < 'A' || r > 'Z') && (r < '0' || r > '9') && !strings.ContainsRune("-_./:=@", r)
 	}) < 0 {
 		return s
 	}

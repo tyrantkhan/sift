@@ -4,6 +4,7 @@ package tui
 import (
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 
@@ -588,7 +589,7 @@ func (m *Model) updateFinish(k tea.KeyPressMsg) tea.Cmd {
 	case "enter":
 		if !m.run.Ready() {
 			pending, discuss := m.unfinished()
-			target := append(pending, discuss...)
+			target := slices.Concat(pending, discuss)
 			if len(target) == 0 {
 				return nil
 			}

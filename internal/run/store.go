@@ -396,7 +396,8 @@ func OpenSession(root, id string) (bool, error) {
 	if err != nil {
 		return false, storageErr("opening review lock", err)
 	}
-	defer f.Close()
+	// Opened only to probe the lock, so closing it cannot lose anything.
+	defer func() { _ = f.Close() }()
 	err = syscall.Flock(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
 	if err == nil {
 		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)

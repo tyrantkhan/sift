@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -138,7 +139,7 @@ func changedFiles(cwd, base string) ([]string, []map[string]string, string, erro
 		if err != nil {
 			return nil, nil, "", err
 		}
-		diff = append(staged, edited...)
+		diff = slices.Concat(staged, edited)
 	} else if diff, err = gitOut("diff", "--name-only", "-z", "--merge-base", "--end-of-options", base, "--"); err != nil {
 		// The merge base makes --base main mean "this branch's work", not "everything that differs from main".
 		return nil, nil, "", err
