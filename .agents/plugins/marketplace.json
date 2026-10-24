@@ -1,0 +1,20 @@
+{
+  "name": "sift",
+  "interface": {
+    "displayName": "sift"
+  },
+  "plugins": [
+    {
+      "name": "sift",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/tyrantkhan/sift.git"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

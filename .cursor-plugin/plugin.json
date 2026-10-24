@@ -1,0 +1,12 @@
+{
+  "name": "sift",
+  "displayName": "sift",
+  "version": "0.1.0",
+  "description": "Hand review findings on plans, specs or code to the human one at a time with sift, answer what they send back, then apply exactly what they decided.",
+  "author": {
+    "name": "tyrantkhan"
+  },
+  "repository": "https://github.com/tyrantkhan/sift",
+  "skills": "./skills/",
+  "license": "MIT"
+}
