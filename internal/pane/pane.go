@@ -79,8 +79,9 @@ func below(w, h int) bool {
 	return w < roomyWidth
 }
 
-// ttySize is the size of the controlling terminal, or 0×0 when there is none, as in an agent's shell tool.
-func ttySize() (int, int) {
+// ttySize is the size of the controlling terminal, or 0×0 when there is none, as in an agent's shell tool. A
+// variable so tests can set the size.
+var ttySize = func() (int, int) {
 	f, err := os.Open("/dev/tty")
 	if err != nil {
 		return 0, 0
