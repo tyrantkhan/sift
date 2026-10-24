@@ -2,7 +2,7 @@
 #
 # One round, start to finish: the summary an agent left, a card per finding with the lines it points
 # at, one key per decision (an approval, a tweak, a rejection), then a note and the send. docs/tapes/
-# seed.sh files the five findings in docs/tapes/demo/findings.json; they are decided in severity
+# seed.sh files the five findings in docs/tapes/_demo/findings.json; they are decided in severity
 # order, so a change to those findings is a change to the keys below.
 
 Output docs/assets/walkthrough.gif
