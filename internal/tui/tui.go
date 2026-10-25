@@ -88,11 +88,10 @@ type Options struct {
 
 // Run opens the interface full screen and returns, when the human quits, whether this session published the run.
 func Run(root, id string, opts Options) (bool, error) {
-	m, err := newModel(root, id)
+	m, err := newModel(root, id, opts)
 	if err != nil {
 		return false, err
 	}
-	m.clearTop = opts.ClearTopRow
 	wasPublished := m.run.Published != nil
 	final, err := tea.NewProgram(m).Run()
 	if err != nil {
@@ -101,13 +100,13 @@ func Run(root, id string, opts Options) (bool, error) {
 	return !wasPublished && final.(Model).run.Published != nil, nil
 }
 
-func newModel(root, id string) (Model, error) {
+func newModel(root, id string, opts Options) (Model, error) {
 	r, docs, err := run.Load(root, id)
 	if err != nil {
 		return Model{}, err
 	}
 	m := Model{root: root, id: id, run: r, docs: docs, ta: newTextarea(3), note: newTextarea(3), vp: viewport.New(),
-		now: time.Now}
+		now: time.Now, clearTop: opts.ClearTopRow}
 	// Dark until the terminal reports its background, which is the more common case.
 	m.setTheme(true)
 	m.reorder()

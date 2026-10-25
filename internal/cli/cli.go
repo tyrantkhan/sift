@@ -13,6 +13,7 @@ import (
 	"unicode"
 
 	"github.com/tyrantkhan/sift/internal/run"
+	"github.com/tyrantkhan/sift/internal/tui"
 )
 
 // Version is this build's version. release-please bumps it with every plugin manifest, which a test keeps in
@@ -29,7 +30,7 @@ type Env struct {
 	// Terminal reports whether stdin and stdout are an interactive terminal, and Review runs the review
 	// interface; both default to the real ones and exist so tests can drive sift review.
 	Terminal func() bool
-	Review   func(root, id string) (published bool, err error)
+	Review   func(root, id string, opts tui.Options) (published bool, err error)
 }
 
 type command struct {

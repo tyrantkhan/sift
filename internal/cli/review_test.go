@@ -12,10 +12,11 @@ import (
 	"time"
 
 	"github.com/tyrantkhan/sift/internal/run"
+	"github.com/tyrantkhan/sift/internal/tui"
 )
 
 // reviewEnv runs sift review with a fake terminal and a fake review interface.
-func reviewEnv(a *agent, out *bytes.Buffer, review func(root, id string) (bool, error), args ...string) *Env {
+func reviewEnv(a *agent, out *bytes.Buffer, review func(root, id string, opts tui.Options) (bool, error), args ...string) *Env {
 	return &Env{Args: args, Stdin: strings.NewReader(""), Stdout: out, Stderr: io.Discard,
 		Getenv:   func(k string) string { return map[string]string{"SIFT_HOME": a.home}[k] },
 		Now:      time.Now,
@@ -30,7 +31,7 @@ func TestReviewHoldsTheSessionAndSaysWhereToGo(t *testing.T) {
 	a.do(`{"title":"t","body":"b"}`, "add")
 
 	var out bytes.Buffer
-	review := func(root, rid string) (bool, error) {
+	review := func(root, rid string, _ tui.Options) (bool, error) {
 		if open, _ := run.OpenSession(root, rid); !open {
 			t.Error("the review session is not marked open while the interface runs")
 		}
@@ -59,7 +60,7 @@ func TestReviewQuitWithoutSendingPrintsNothing(t *testing.T) {
 	_, res := a.do("", "start", "plan.md")
 	id := res["run"].(string)
 	var out bytes.Buffer
-	if code := Main(reviewEnv(a, &out, func(string, string) (bool, error) { return false, nil }, "review", "--run", id)); code != 0 || out.Len() != 0 {
+	if code := Main(reviewEnv(a, &out, func(string, string, tui.Options) (bool, error) { return false, nil }, "review", "--run", id)); code != 0 || out.Len() != 0 {
 		t.Fatalf("exit %d, output %q", code, out.String())
 	}
 }
@@ -75,14 +76,14 @@ func TestReviewRefusals(t *testing.T) {
 	}
 	var out bytes.Buffer
 	called := false
-	Main(reviewEnv(a, &out, func(string, string) (bool, error) { called = true; return false, nil }, "review", "--run", id))
+	Main(reviewEnv(a, &out, func(string, string, tui.Options) (bool, error) { called = true; return false, nil }, "review", "--run", id))
 	if called || !strings.Contains(out.String(), `"review-open"`) {
 		t.Fatalf("a second review should be refused: %s", out.String())
 	}
 	release()
 
 	out.Reset()
-	failing := func(string, string) (bool, error) { return false, errors.New("terminal went away") }
+	failing := func(string, string, tui.Options) (bool, error) { return false, errors.New("terminal went away") }
 	if code := Main(reviewEnv(a, &out, failing, "review", "--run", id)); code != 1 || !strings.Contains(out.String(), "terminal went away") {
 		t.Fatalf("a failed interface: exit %d %s", code, out.String())
 	}
@@ -185,6 +186,23 @@ func TestClearTopRowOnlyInOrca(t *testing.T) {
 	} {
 		if got := clearTopRow(c.host, c.env); got != c.want {
 			t.Errorf("clearTopRow(%q) = %v, want %v", c.host, got, c.want)
+		}
+	}
+}
+
+func TestReviewTellsTheInterfaceItsHost(t *testing.T) {
+	a, _ := newAgent(t)
+	_, res := a.do("", "start", "plan.md")
+	id := res["run"].(string)
+	for host, want := range map[string]bool{"orca": true, "tmux": false} {
+		var got tui.Options
+		var out bytes.Buffer
+		record := func(_, _ string, opts tui.Options) (bool, error) { got = opts; return false, nil }
+		if code := Main(reviewEnv(a, &out, record, "review", "--run", id, "--host", host)); code != 0 {
+			t.Fatalf("--host %s: exit %d %s", host, code, out.String())
+		}
+		if got.ClearTopRow != want {
+			t.Errorf("--host %s: ClearTopRow = %v, want %v", host, got.ClearTopRow, want)
 		}
 	}
 }

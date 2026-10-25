@@ -37,7 +37,7 @@ func setup(t *testing.T) Model {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -252,7 +252,7 @@ func TestEmptyRunDoesNotPanic(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -342,7 +342,7 @@ func TestMultiFileCardShowsTheRightFile(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -384,7 +384,7 @@ func TestLongAgentNameFitsTheSmallestWindow(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -441,7 +441,7 @@ func modelWith(t *testing.T, agent string, w, h int, findings ...run.NewFinding)
 			t.Fatal(err)
 		}
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -684,7 +684,7 @@ func TestReopeningASentRunShowsItWasSent(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(m.root, m.id)
+	m, err := newModel(m.root, m.id, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -759,7 +759,7 @@ func TestCardDetails(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -865,13 +865,14 @@ func TestFailuresShowInTheFlash(t *testing.T) {
 }
 
 func TestWindowTooSmallOrUnsized(t *testing.T) {
-	m, err := newModel(setup(t).root, setup(t).id)
-	if err == nil {
-		if !strings.Contains(m.render(), "loading") {
-			t.Fatalf("before the first size: %q", m.render())
-		}
-	}
 	mm := setup(t)
+	m, err := newModel(mm.root, mm.id, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(m.render(), "loading") {
+		t.Fatalf("before the first size: %q", m.render())
+	}
 	next, _ := mm.Update(tea.WindowSizeMsg{Width: 40, Height: 10})
 	if got := next.(Model).render(); !strings.Contains(got, "at least 50×14 (now 40×10)") {
 		t.Fatalf("tiny window: %q", got)
@@ -896,7 +897,7 @@ func TestIntroShowsTheSummaryAndShortensLongFileLists(t *testing.T) {
 	if _, err := run.Update(root, r.ID, func(r *run.Run, _ run.Docs) error { return r.SetSummary("Checked the **rollout**.") }); err != nil {
 		t.Fatal(err)
 	}
-	m, err := newModel(root, r.ID)
+	m, err := newModel(root, r.ID, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -912,8 +913,11 @@ func TestIntroShowsTheSummaryAndShortensLongFileLists(t *testing.T) {
 
 func TestClearTopRowKeepsTheCornerEmpty(t *testing.T) {
 	for _, size := range [][2]int{{50, 14}, {90, 30}} {
-		m := modelWith(t, "Codex", size[0], size[1], run.NewFinding{Title: "t", Body: "b", Proposal: "p"})
-		m.clearTop = true
+		seeded := modelWith(t, "Codex", size[0], size[1], run.NewFinding{Title: "t", Body: "b", Proposal: "p"})
+		m, err := newModel(seeded.root, seeded.id, Options{ClearTopRow: true})
+		if err != nil {
+			t.Fatal(err)
+		}
 		next, _ := m.Update(tea.WindowSizeMsg{Width: size[0], Height: size[1]})
 		m = press(t, next.(Model), "enter")
 		check := func(stage string) {
