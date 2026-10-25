@@ -911,6 +911,13 @@ func TestIntroShowsTheSummaryAndShortensLongFileLists(t *testing.T) {
 	}
 }
 
+func TestRunRefusesAMissingRunBeforeTakingTheTerminal(t *testing.T) {
+	published, err := Run(t.TempDir(), "missing", Options{})
+	if err == nil || published {
+		t.Fatalf("Run on a missing run = %v, %v; want an error", published, err)
+	}
+}
+
 func TestClearTopRowKeepsTheCornerEmpty(t *testing.T) {
 	for _, size := range [][2]int{{50, 14}, {90, 30}} {
 		seeded := modelWith(t, "Codex", size[0], size[1], run.NewFinding{Title: "t", Body: "b", Proposal: "p"})
