@@ -8,6 +8,8 @@ An agent reviews a plan, a spec or code and hands you 30 findings in one scrolli
 
 Inspired by [loupe](https://github.com/eriksaulnier/loupe), which does the same for GitHub pull request reviews.
 
+![A review in sift: the agent's summary, then one card per finding with the lines it points at. The human approves one, approves another with a typed tweak, rejects one, adds a note and sends; sift says to head back to the agent.](docs/assets/walkthrough.gif)
+
 ## How it works
 
 1. The agent starts a round on the files it reviewed (`sift start plan.md`, or `sift start --changed` for the code changed in git), files its findings with `sift add`, and runs `sift handoff`. That opens `sift review` in a pane beside the agent.
