@@ -127,7 +127,8 @@ func TestHandoffOpensThePaneInTmux(t *testing.T) {
 		t.Fatalf("handoff: exit %d %s", code, out.String())
 	}
 	calls, _ := os.ReadFile(log)
-	if !strings.Contains(string(calls), "split-window -h -t %1") || !strings.Contains(string(calls), "review --run "+id) {
+	if !strings.Contains(string(calls), "split-window -h -t %1") || !strings.Contains(string(calls), "review --run "+id) ||
+		!strings.Contains(string(calls), "--host tmux") {
 		t.Fatalf("tmux calls:\n%s", calls)
 	}
 
@@ -165,5 +166,25 @@ func TestStartRefusals(t *testing.T) {
 	}
 	if _, res := a.do("", "start", "--changed", "--base", "no-such-branch"); errCode(res) != "git" {
 		t.Errorf("unknown base: %v", res)
+	}
+}
+
+func TestClearTopRowOnlyInOrca(t *testing.T) {
+	inOrca := func(k string) string { return map[string]string{"ORCA_TERMINAL_HANDLE": "term-1"}[k] }
+	none := func(string) string { return "" }
+	for _, c := range []struct {
+		host string
+		env  func(string) string
+		want bool
+	}{
+		{"orca", none, true},
+		{"", inOrca, true},
+		{"tmux", inOrca, false}, // handoff named another host, which draws nothing over the pane
+		{"", none, false},
+		{"iterm", none, false},
+	} {
+		if got := clearTopRow(c.host, c.env); got != c.want {
+			t.Errorf("clearTopRow(%q) = %v, want %v", c.host, got, c.want)
+		}
 	}
 }

@@ -71,6 +71,7 @@ type Model struct {
 	vp       viewport.Model
 	w, h     int
 	flash    string
+	clearTop bool
 
 	th         theme
 	md         *markdown
@@ -78,12 +79,20 @@ type Model struct {
 	guardUntil time.Time
 }
 
+// Options adjusts the interface to the terminal it runs in.
+type Options struct {
+	// ClearTopRow leaves the first row empty, for hosts such as Orca that draw pane controls over the
+	// top-right corner of a split pane, where the header's progress would otherwise sit.
+	ClearTopRow bool
+}
+
 // Run opens the interface full screen and returns, when the human quits, whether this session published the run.
-func Run(root, id string) (bool, error) {
+func Run(root, id string, opts Options) (bool, error) {
 	m, err := newModel(root, id)
 	if err != nil {
 		return false, err
 	}
+	m.clearTop = opts.ClearTopRow
 	wasPublished := m.run.Published != nil
 	final, err := tea.NewProgram(m).Run()
 	if err != nil {
@@ -271,11 +280,17 @@ func (m *Model) refresh(top bool) {
 }
 
 // Layout, top to bottom: the header bar, a spacer when there is room, the body, the footer.
+// headerHeight counts the rows above the body: the empty top row when asked for, the header bar, and a spacer
+// when there is room.
 func (m Model) headerHeight() int {
-	if m.h >= 18 {
-		return 2
+	n := 1
+	if m.clearTop {
+		n++
 	}
-	return 1
+	if m.h >= 18 {
+		n++
+	}
+	return n
 }
 
 func (m Model) bodyHeight() int { return max(1, m.h-m.headerHeight()-footerHeight) }

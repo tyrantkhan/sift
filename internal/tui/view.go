@@ -46,8 +46,12 @@ func (m Model) render() string {
 	case modeDone:
 		body = m.doneView()
 	}
-	lines := []string{m.header()}
-	if m.headerHeight() > 1 {
+	var lines []string
+	if m.clearTop {
+		lines = append(lines, "")
+	}
+	lines = append(lines, m.header())
+	if m.h >= 18 {
 		lines = append(lines, "")
 	}
 	h := m.bodyHeight()

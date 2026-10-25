@@ -909,3 +909,33 @@ func TestIntroShowsTheSummaryAndShortensLongFileLists(t *testing.T) {
 		t.Fatal("? on the intro should open help")
 	}
 }
+
+func TestClearTopRowKeepsTheCornerEmpty(t *testing.T) {
+	for _, size := range [][2]int{{50, 14}, {90, 30}} {
+		m := modelWith(t, "Codex", size[0], size[1], run.NewFinding{Title: "t", Body: "b", Proposal: "p"})
+		m.clearTop = true
+		next, _ := m.Update(tea.WindowSizeMsg{Width: size[0], Height: size[1]})
+		m = press(t, next.(Model), "enter")
+		check := func(stage string) {
+			t.Helper()
+			lines := strings.Split(m.render(), "\n")
+			if len(lines) != size[1] {
+				t.Fatalf("%s at %v: %d lines, want %d", stage, size, len(lines), size[1])
+			}
+			if strings.TrimSpace(ansi.Strip(lines[0])) != "" || !strings.Contains(ansi.Strip(lines[1]), "sift") {
+				t.Fatalf("%s at %v: the top row should be empty and the header below it:\n%s", stage, size, screen(m))
+			}
+			for _, l := range lines {
+				if w := lipgloss.Width(l); w > size[0] {
+					t.Fatalf("%s at %v: line is %d wide", stage, size, w)
+				}
+			}
+		}
+		check("card")
+		m = settle(press(t, m, "a"))
+		check("finish")
+		if s := screen(m); !strings.Contains(s, "Anything else for Codex?") || !strings.Contains(s, "Send to Codex") {
+			t.Fatalf("at %v the finish screen lost its note box or send button:\n%s", size, s)
+		}
+	}
+}
