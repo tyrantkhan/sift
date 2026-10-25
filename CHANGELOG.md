@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/tyrantkhan/sift/compare/v0.1.2...v0.1.3) (2026-10-25)
+
+
+### Features
+
+* tell the agent to use sift from a SessionStart hook ([#18](https://github.com/tyrantkhan/sift/issues/18)) ([caa3db2](https://github.com/tyrantkhan/sift/commit/caa3db23c534dc72412bf8e0bdc6b2d46ad886f1))
+
 ## [0.1.2](https://github.com/tyrantkhan/sift/compare/v0.1.1...v0.1.2) (2026-10-25)
 
 
