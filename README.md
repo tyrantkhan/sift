@@ -8,7 +8,7 @@ An agent reviews a plan, a spec or code and hands you 30 findings in one scrolli
 
 Inspired by [loupe](https://github.com/eriksaulnier/loupe), which does the same for GitHub pull request reviews.
 
-![A review in sift: the agent's summary, then one card per finding with the lines it points at. The human approves one, approves another with a typed tweak, rejects one, adds a note and sends; sift says to head back to the agent.](docs/assets/walkthrough.gif)
+![A review in sift: the agent's summary, then one card per finding with the lines it points at. The human approves one, approves another with a typed tweak, asks the agent about a third and moves on, rejects one, then reads the agent's answer and revised proposal as they land, follows up in the same thread, approves once the second answer arrives, adds a note and sends; sift says to head back to the agent.](docs/assets/walkthrough.gif)
 
 ## How it works
 
