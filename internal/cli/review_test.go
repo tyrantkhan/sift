@@ -170,22 +170,22 @@ func TestStartRefusals(t *testing.T) {
 	}
 }
 
-func TestClearTopRowOnlyInOrca(t *testing.T) {
+func TestCornerGutterOnlyInOrca(t *testing.T) {
 	inOrca := func(k string) string { return map[string]string{"ORCA_TERMINAL_HANDLE": "term-1"}[k] }
 	none := func(string) string { return "" }
 	for _, c := range []struct {
 		host string
 		env  func(string) string
-		want bool
+		want int
 	}{
-		{"orca", none, true},
-		{"", inOrca, true},
-		{"tmux", inOrca, false}, // handoff named another host, which draws nothing over the pane
-		{"", none, false},
-		{"iterm", none, false},
+		{"orca", none, orcaGutter},
+		{"", inOrca, orcaGutter},
+		{"tmux", inOrca, 0}, // handoff named another host, which draws nothing over the pane
+		{"", none, 0},
+		{"iterm", none, 0},
 	} {
-		if got := clearTopRow(c.host, c.env); got != c.want {
-			t.Errorf("clearTopRow(%q) = %v, want %v", c.host, got, c.want)
+		if got := cornerGutter(c.host, c.env); got != c.want {
+			t.Errorf("cornerGutter(%q) = %d, want %d", c.host, got, c.want)
 		}
 	}
 }
@@ -194,15 +194,15 @@ func TestReviewTellsTheInterfaceItsHost(t *testing.T) {
 	a, _ := newAgent(t)
 	_, res := a.do("", "start", "plan.md")
 	id := res["run"].(string)
-	for host, want := range map[string]bool{"orca": true, "tmux": false} {
+	for host, want := range map[string]int{"orca": orcaGutter, "tmux": 0} {
 		var got tui.Options
 		var out bytes.Buffer
 		record := func(_, _ string, opts tui.Options) (bool, error) { got = opts; return false, nil }
 		if code := Main(reviewEnv(a, &out, record, "review", "--run", id, "--host", host)); code != 0 {
 			t.Fatalf("--host %s: exit %d %s", host, code, out.String())
 		}
-		if got.ClearTopRow != want {
-			t.Errorf("--host %s: ClearTopRow = %v, want %v", host, got.ClearTopRow, want)
+		if got.CornerGutter != want {
+			t.Errorf("--host %s: CornerGutter = %d, want %d", host, got.CornerGutter, want)
 		}
 	}
 }

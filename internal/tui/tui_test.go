@@ -943,10 +943,10 @@ func TestRunRefusesAMissingRunBeforeTakingTheTerminal(t *testing.T) {
 	}
 }
 
-func TestClearTopRowKeepsTheCornerEmpty(t *testing.T) {
+func TestCornerGutterKeepsTheCornerEmpty(t *testing.T) {
 	for _, size := range [][2]int{{50, 14}, {90, 30}} {
 		seeded := modelWith(t, "Codex", size[0], size[1], run.NewFinding{Title: "t", Body: "b", Proposal: "p"})
-		m, err := newModel(seeded.root, seeded.id, Options{ClearTopRow: true})
+		m, err := newModel(seeded.root, seeded.id, Options{CornerGutter: 5})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -958,8 +958,13 @@ func TestClearTopRowKeepsTheCornerEmpty(t *testing.T) {
 			if len(lines) != size[1] {
 				t.Fatalf("%s at %v: %d lines, want %d", stage, size, len(lines), size[1])
 			}
-			if strings.TrimSpace(ansi.Strip(lines[0])) != "" || !strings.Contains(ansi.Strip(lines[1]), "sift") {
-				t.Fatalf("%s at %v: the top row should be empty and the header below it:\n%s", stage, size, screen(m))
+			header := ansi.Strip(lines[0])
+			if !strings.HasPrefix(header, " sift ") || lipgloss.Width(lines[0]) != size[0] {
+				t.Fatalf("%s at %v: want the header on the first row, across the pane:\n%s", stage, size, screen(m))
+			}
+			// The count ends with a space, so its last digit sits one column before the gutter.
+			if end := lipgloss.Width(strings.TrimRight(header, " ")); end != size[0]-5-1 {
+				t.Fatalf("%s at %v: the count ends at column %d, want %d:\n%q", stage, size, end, size[0]-6, header)
 			}
 			for _, l := range lines {
 				if w := lipgloss.Width(l); w > size[0] {
@@ -973,5 +978,8 @@ func TestClearTopRowKeepsTheCornerEmpty(t *testing.T) {
 		if s := screen(m); !strings.Contains(s, "Anything else for Codex?") || !strings.Contains(s, "Send to Codex") {
 			t.Fatalf("at %v the finish screen lost its note box or send button:\n%s", size, s)
 		}
+	}
+	if end := lipgloss.Width(strings.TrimRight(ansi.Strip(setup(t).header()), " ")); end != 100-1 {
+		t.Fatalf("without a gutter the count ends at column %d, want it against the edge", end)
 	}
 }

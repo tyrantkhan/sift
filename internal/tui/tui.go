@@ -71,7 +71,7 @@ type Model struct {
 	vp       viewport.Model
 	w, h     int
 	flash    string
-	clearTop bool
+	gutter   int
 
 	th         theme
 	md         *markdown
@@ -81,9 +81,9 @@ type Model struct {
 
 // Options adjusts the interface to the terminal it runs in.
 type Options struct {
-	// ClearTopRow leaves the first row empty, for hosts such as Orca that draw pane controls over the
-	// top-right corner of a split pane, where the header's progress would otherwise sit.
-	ClearTopRow bool
+	// CornerGutter leaves this many columns empty at the right end of the header, for hosts such as Orca
+	// that draw pane controls over the top-right corner of a split pane, where the progress would otherwise sit.
+	CornerGutter int
 }
 
 // Run opens the interface full screen and returns, when the human quits, whether this session published the run.
@@ -106,7 +106,7 @@ func newModel(root, id string, opts Options) (Model, error) {
 		return Model{}, err
 	}
 	m := Model{root: root, id: id, run: r, docs: docs, ta: newTextarea(3), note: newTextarea(3), vp: viewport.New(),
-		now: time.Now, clearTop: opts.ClearTopRow}
+		now: time.Now, gutter: max(0, opts.CornerGutter)}
 	// Dark until the terminal reports its background, which is the more common case.
 	m.setTheme(true)
 	m.reorder()
@@ -279,17 +279,11 @@ func (m *Model) refresh(top bool) {
 }
 
 // Layout, top to bottom: the header bar, a spacer when there is room, the body, the footer.
-// headerHeight counts the rows above the body: the empty top row when asked for, the header bar, and a spacer
-// when there is room.
 func (m Model) headerHeight() int {
-	n := 1
-	if m.clearTop {
-		n++
-	}
 	if m.h >= 18 {
-		n++
+		return 2
 	}
-	return n
+	return 1
 }
 
 func (m Model) bodyHeight() int { return max(1, m.h-m.headerHeight()-footerHeight) }

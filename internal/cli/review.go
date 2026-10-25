@@ -60,7 +60,7 @@ func cmdReview(env *Env, args []string) error {
 		return err
 	}
 	defer release()
-	published, err := review(t.root, t.id, tui.Options{ClearTopRow: clearTopRow(*host, env.Getenv)})
+	published, err := review(t.root, t.id, tui.Options{CornerGutter: cornerGutter(*host, env.Getenv)})
 	if err != nil {
 		return err
 	}
@@ -75,11 +75,17 @@ func cmdReview(env *Env, args []string) error {
 	return nil
 }
 
-// clearTopRow reports whether the review runs in Orca, which draws pane controls over a split pane's top-right
-// corner. handoff names the host; a review the human opened by hand inside Orca is recognized by the handle
-// Orca sets.
-func clearTopRow(host string, getenv func(string) string) bool {
-	return host == "orca" || (host == "" && getenv("ORCA_TERMINAL_HANDLE") != "")
+// orcaGutter is how many columns Orca's split and close controls cover at the right end of a split pane's first
+// row, with slack: they are drawn at a fixed pixel size, so a smaller font puts them over more columns.
+const orcaGutter = 5
+
+// cornerGutter returns how many columns to keep clear at the header's right end. Only Orca draws over a pane;
+// handoff names the host, and a review the human opened by hand inside Orca is recognized by the handle Orca sets.
+func cornerGutter(host string, getenv func(string) string) int {
+	if host == "orca" || (host == "" && getenv("ORCA_TERMINAL_HANDLE") != "") {
+		return orcaGutter
+	}
+	return 0
 }
 
 func isTerminal(f *os.File) bool {
