@@ -59,6 +59,8 @@ claude plugin marketplace add tyrantkhan/sift
 claude plugin install sift@sift
 ```
 
+The plugin also adds a `SessionStart` hook that tells Claude, in two lines, to hand review findings over with sift. Claude Code sometimes lists a plugin skill without its description, and the skill then never triggers; the hook does not depend on the listing. The same hook ships for Codex and Cursor.
+
 </details>
 
 <details>
@@ -68,6 +70,8 @@ claude plugin install sift@sift
 codex plugin marketplace add tyrantkhan/sift
 codex plugin add sift@sift
 ```
+
+The plugin's `SessionStart` hook runs on Codex too, with the same two lines of context.
 
 Inside the Codex sandbox, sift cannot write its data directory or reach the terminal host. Approve the skill's requests to run `sift` outside the sandbox.
 
