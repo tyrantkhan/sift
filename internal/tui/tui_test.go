@@ -911,6 +911,31 @@ func TestIntroShowsTheSummaryAndShortensLongFileLists(t *testing.T) {
 	}
 }
 
+func TestConversationSitsAboveTheCode(t *testing.T) {
+	m := press(t, setup(t), "enter", "d", "is this real?", "enter")
+	if _, err := run.Update(m.root, m.id, func(r *run.Run, _ run.Docs) error {
+		proposal := "add a flag, off by default"
+		return r.Reply("F2", "yes, see the rollout", run.Revision{Proposal: &proposal}, false, time.Now())
+	}); err != nil {
+		t.Fatal(err)
+	}
+	next, _ := m.Update(tickMsg(time.Now()))
+	m = next.(Model)
+	m.cur = m.indexOf("F2")
+	card := ansi.Strip(m.cardContent())
+	at := func(s string) int {
+		t.Helper()
+		i := strings.Index(card, s)
+		if i < 0 {
+			t.Fatalf("card lacks %q:\n%s", s, card)
+		}
+		return i
+	}
+	if at("off by default") > at("is this real?") || at("yes, see the rollout") > at("Ship Friday.") {
+		t.Fatalf("want the revised proposal, then the conversation, then the code:\n%s", card)
+	}
+}
+
 func TestRunRefusesAMissingRunBeforeTakingTheTerminal(t *testing.T) {
 	published, err := Run(t.TempDir(), "missing", Options{})
 	if err == nil || published {
