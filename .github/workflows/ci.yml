@@ -22,7 +22,9 @@ jobs:
       - uses: actions/setup-go@v7
         with:
           go-version-file: "go.mod"
-      - run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
+      # gotestsum runs go test and also writes the results as JUnit XML, which Codecov's test analytics reads.
+      - name: Test
+        run: go run gotest.tools/gotestsum@v1.13.0 --junitfile junit.xml -- -race -covermode=atomic -coverprofile=coverage.out ./...
       - run: go build -v ./cmd/sift
       # Coverage is the same on both systems, so one upload is enough. A failed upload, such as during a
       # Codecov outage, does not fail the required test check.
@@ -33,6 +35,17 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.out
           disable_search: true
+      # Test results come from both systems, flagged by system, and upload even when tests fail, which is
+      # when they matter.
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          report_type: test_results
+          files: junit.xml
+          disable_search: true
+          flags: ${{ matrix.os }}
 
   lint:
     name: Lint
