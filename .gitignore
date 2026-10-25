@@ -2,3 +2,4 @@ bin/
 .DS_Store
 .playwright-mcp/
 coverage.out
+junit.xml
