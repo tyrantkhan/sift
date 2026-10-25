@@ -2,6 +2,9 @@
 
 # sift
 
+[![CI](https://github.com/tyrantkhan/sift/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tyrantkhan/sift/actions/workflows/ci.yml)
+[![Release](https://github.com/tyrantkhan/sift/actions/workflows/release.yml/badge.svg?branch=main)](https://github.com/tyrantkhan/sift/actions/workflows/release.yml)
+[![Latest release](https://img.shields.io/github/v/release/tyrantkhan/sift)](https://github.com/tyrantkhan/sift/releases/latest)
 [![codecov](https://codecov.io/gh/tyrantkhan/sift/graph/badge.svg)](https://codecov.io/gh/tyrantkhan/sift)
 
 An agent reviews a plan, a spec or code and hands you 30 findings in one scrolling list. sift shows them to you one at a time instead, most severe first. You decide each with one key, and your decisions go back to the agent, which applies them.
