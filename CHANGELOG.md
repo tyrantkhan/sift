@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.4](https://github.com/tyrantkhan/sift/compare/v0.1.3...v0.1.4) (2026-10-25)
+
+
+### Bug Fixes
+
+* keep Orca's pane controls off the header with a gutter, not a row ([#20](https://github.com/tyrantkhan/sift/issues/20)) ([f8e2b66](https://github.com/tyrantkhan/sift/commit/f8e2b6605db7ca72236001ea4f9bf079e657f218))
+
 ## [0.1.3](https://github.com/tyrantkhan/sift/compare/v0.1.2...v0.1.3) (2026-10-25)
 
 
