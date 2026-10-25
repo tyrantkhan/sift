@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1](https://github.com/tyrantkhan/sift/compare/v0.1.0...v0.1.1) (2026-10-25)
+
+
+### Bug Fixes
+
+* keep Orca's pane controls off the review's progress ([#12](https://github.com/tyrantkhan/sift/issues/12)) ([c6e361e](https://github.com/tyrantkhan/sift/commit/c6e361eac49e2098cf0b56cb18d5d63ba9c9f368))
+
 ## 0.1.0 (2026-10-24)
 
 First release. sift takes the findings an agent produces when it reviews a plan, a spec or code, shows them to you one at a time, and hands your decisions back to the agent to apply.
