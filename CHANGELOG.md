@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/tyrantkhan/sift/compare/v0.1.1...v0.1.2) (2026-10-25)
+
+
+### Bug Fixes
+
+* show the conversation above the code on a finding's card ([#15](https://github.com/tyrantkhan/sift/issues/15)) ([e4487bd](https://github.com/tyrantkhan/sift/commit/e4487bdeb7e4f2a4672072f4b0c4a26974997f5c))
+
 ## [0.1.1](https://github.com/tyrantkhan/sift/compare/v0.1.0...v0.1.1) (2026-10-25)
 
 
