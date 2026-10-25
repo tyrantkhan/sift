@@ -46,11 +46,7 @@ func (m Model) render() string {
 	case modeDone:
 		body = m.doneView()
 	}
-	var lines []string
-	if m.clearTop {
-		lines = append(lines, "")
-	}
-	lines = append(lines, m.header())
+	lines := []string{m.header()}
 	if m.h >= 18 {
 		lines = append(lines, "")
 	}
@@ -91,9 +87,11 @@ func (m Model) header() string {
 	}
 	tab := lipgloss.NewStyle().Background(t.violet).Foreground(t.white).Bold(true).Render(" sift ")
 	c := m.run.Counts()
+	// The progress ends before the gutter; the bar's color runs on under the host's controls.
+	w := max(0, m.w-m.gutter)
 
 	cells := ""
-	room := m.w / 3
+	room := w / 3
 	if len(m.order) <= room-6 {
 		for i, id := range m.order {
 			f, _ := m.run.Finding(id)
@@ -127,10 +125,10 @@ func (m Model) header() string {
 		cells = onBar(t.good).Render(strings.Repeat("▮", done)) + onBar(t.lilac).Render(strings.Repeat("▯", n-done))
 	}
 	right := cells + onBar(t.white).Bold(true).Render(fmt.Sprintf(" %d/%d ", c.Decided(), c.Total))
-	titleRoom := m.w - lipgloss.Width(tab) - lipgloss.Width(right) - 2
+	titleRoom := w - lipgloss.Width(tab) - lipgloss.Width(right) - 2
 	title := onBar(t.lilac).Render(" " + truncate(clean(m.run.Title), max(1, titleRoom)))
-	gap := max(0, m.w-lipgloss.Width(tab)-lipgloss.Width(title)-lipgloss.Width(right))
-	return fit(tab+title+onBar(nil).Render(strings.Repeat(" ", gap))+right, m.w)
+	gap := max(0, w-lipgloss.Width(tab)-lipgloss.Width(title)-lipgloss.Width(right))
+	return fit(tab+title+onBar(nil).Render(strings.Repeat(" ", gap))+right, w) + onBar(nil).Render(strings.Repeat(" ", m.w-w))
 }
 
 // counts is the status line: what is left first, so a narrow pane cuts the least useful parts.
