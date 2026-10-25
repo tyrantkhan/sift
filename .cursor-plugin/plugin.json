@@ -8,5 +8,6 @@
   },
   "repository": "https://github.com/tyrantkhan/sift",
   "skills": "./skills/",
+  "hooks": "./hooks/hooks-cursor.json",
   "license": "MIT"
 }

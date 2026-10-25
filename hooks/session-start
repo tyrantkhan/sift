@@ -1,5 +1,5 @@
 #!/bin/sh
-# SessionStart hook for the sift plugin.
+# SessionStart hook for the sift plugin, on Claude Code, Codex and Cursor.
 #
 # A skill triggers on the description in its frontmatter, but only when the
 # host prints that description in its skill listing, and Claude Code sometimes
@@ -11,4 +11,11 @@ set -eu
 
 context='sift is installed. When a review of a plan, a spec or code leaves findings or decisions for the human, more than a handful, you MUST hand them over with the sift skill rather than list them in chat: the human decides each one, alone on screen, in the review pane. Load the skill with the Skill tool before running any sift command.'
 
-printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context"
+# Cursor reads additional_context; Claude Code and Codex read the nested
+# hookSpecificOutput form. Claude Code reads both without deduplication, so
+# only one is emitted.
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
+  printf '{"additional_context":"%s"}\n' "$context"
+else
+  printf '{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"%s"}}\n' "$context"
+fi
