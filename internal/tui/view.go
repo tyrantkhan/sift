@@ -227,11 +227,8 @@ func (m Model) cardContent() string {
 		out = append(out, bar(m.md.lines(f.Note, w-2), t.bad)...)
 	}
 
-	if f.Anchor != nil {
-		blank()
-		out = append(out, m.excerpt(*f.Anchor, w)...)
-	}
-
+	// The conversation sits above the code: after a discussion the human decides on the revised proposal and the
+	// answer, so both stay on the first screen, while the code they already read moves below.
 	if len(f.Thread) > 0 {
 		blank()
 		out = append(out, t.fg(t.muted).Render("Conversation"))
@@ -243,6 +240,11 @@ func (m Model) cardContent() string {
 			lines := append([]string{t.fg(col).Bold(true).Render(who)}, m.md.lines(msg.Text, w-2-indent)...)
 			out = append(out, indentLines(bar(lines, col), indent)...)
 		}
+	}
+
+	if f.Anchor != nil {
+		blank()
+		out = append(out, m.excerpt(*f.Anchor, w)...)
 	}
 	return strings.Join(out, "\n")
 }

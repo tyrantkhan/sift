@@ -63,11 +63,9 @@ Sleep 2000ms
 Type "a"
 Sleep 5s
 
-# Go to the answer: the revised proposal, and the conversation at the bottom of the card.
+# Go to the answer: the revised proposal, with the conversation under it and the code below.
 Enter
-Sleep 1500ms
-Type@150ms "jjjjjjjjjjjj"
-Sleep 3500ms
+Sleep 5s
 
 # Follow up in the same thread, and wait for the second answer.
 Type "d"
@@ -77,11 +75,9 @@ Sleep 900ms
 Enter
 Sleep 5s
 
-# Settled: approve it. Nothing is left, so the send opens.
+# The second answer settles it: approve. Nothing is left, so the send opens.
 Enter
-Sleep 1500ms
-Type@150ms "jjjjjjjjjjjj"
-Sleep 3500ms
+Sleep 5s
 Type "a"
 Sleep 2s
 
