@@ -360,7 +360,8 @@ func cmdHandoff(env *Env, args []string) error {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
-	if err := host.Open(ctx, argv); err != nil {
+	// The review learns which host it runs in, since some draw over the pane it opens in.
+	if err := host.Open(ctx, append(argv, "--host", host.Name())); err != nil {
 		return &run.Refusal{Code: "pane-failed", Message: host.Name() + ": " + err.Error(), Fix: fix}
 	}
 	return writeJSON(env, "handoff", map[string]any{"run": t.id, "host": host.Name()})

@@ -8,7 +8,7 @@ import (
 	"github.com/tyrantkhan/sift/internal/tui"
 )
 
-const reviewHelp = `Usage: sift review [--run <id>] [--home <dir>]
+const reviewHelp = `Usage: sift review [--run <id>] [--home <dir>] [--host <name>]
 
 Decide each finding, one at a time, then send your decisions back to the agent. Human only: agents MUST
 NOT run this; sift handoff opens it for the human.
@@ -27,6 +27,7 @@ func cmdReview(env *Env, args []string) error {
 	fs := newFlags(env, "review", reviewHelp)
 	runFlag := fs.String("run", "", "run id")
 	home := fs.String("home", "", "data root, overriding SIFT_HOME")
+	host := fs.String("host", "", "the terminal host that opened this pane, as sift handoff passes it")
 	if _, err := parse(fs, args); err != nil {
 		return err
 	}
@@ -59,7 +60,7 @@ func cmdReview(env *Env, args []string) error {
 		return err
 	}
 	defer release()
-	published, err := review(t.root, t.id)
+	published, err := review(t.root, t.id, tui.Options{ClearTopRow: clearTopRow(*host, env.Getenv)})
 	if err != nil {
 		return err
 	}
@@ -72,6 +73,13 @@ func cmdReview(env *Env, args []string) error {
 		fmt.Fprintf(env.Stdout, "Sent. Head back to %s.\n", r.AgentName())
 	}
 	return nil
+}
+
+// clearTopRow reports whether the review runs in Orca, which draws pane controls over a split pane's top-right
+// corner. handoff names the host; a review the human opened by hand inside Orca is recognized by the handle
+// Orca sets.
+func clearTopRow(host string, getenv func(string) string) bool {
+	return host == "orca" || (host == "" && getenv("ORCA_TERMINAL_HANDLE") != "")
 }
 
 func isTerminal(f *os.File) bool {
