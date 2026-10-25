@@ -59,6 +59,8 @@ claude plugin marketplace add tyrantkhan/sift
 claude plugin install sift@sift
 ```
 
+The plugin also adds a `SessionStart` hook that tells Claude, in two lines, to hand review findings over with sift. Claude Code sometimes lists a plugin skill without its description, and the skill then never triggers; the hook does not depend on the listing.
+
 </details>
 
 <details>
