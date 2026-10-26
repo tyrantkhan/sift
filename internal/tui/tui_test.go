@@ -3,6 +3,7 @@ package tui
 import (
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -981,5 +982,33 @@ func TestCornerGutterKeepsTheCornerEmpty(t *testing.T) {
 	}
 	if end := lipgloss.Width(strings.TrimRight(ansi.Strip(setup(t).header()), " ")); end != 100-1 {
 		t.Fatalf("without a gutter the count ends at column %d, want it against the edge", end)
+	}
+}
+
+// sendsHideCursor reports whether cmd, through any batch, writes the sequence that hides the terminal's cursor.
+func sendsHideCursor(cmd tea.Cmd) bool {
+	if cmd == nil {
+		return false
+	}
+	switch msg := cmd().(type) {
+	case tea.RawMsg:
+		return msg.Msg == ansi.ResetModeTextCursorEnable
+	case tea.BatchMsg:
+		return slices.ContainsFunc(msg, sendsHideCursor)
+	}
+	return false
+}
+
+func TestCursorIsHiddenAgainOnFocusAndResize(t *testing.T) {
+	m := press(t, setup(t), "enter")
+	if !m.View().ReportFocus {
+		t.Fatal("the view does not ask for focus events")
+	}
+	next, cmd := m.Update(tea.FocusMsg{})
+	if !sendsHideCursor(cmd) {
+		t.Fatal("regaining focus does not hide the cursor")
+	}
+	if _, cmd = next.(Model).Update(tea.WindowSizeMsg{Width: 120, Height: 40}); !sendsHideCursor(cmd) {
+		t.Fatal("a resize does not hide the cursor")
 	}
 }
