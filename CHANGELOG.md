@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.5](https://github.com/tyrantkhan/sift/compare/v0.1.4...v0.1.5) (2026-10-26)
+
+
+### Features
+
+* widen the card to 140 columns and fit the keys to its width ([#26](https://github.com/tyrantkhan/sift/issues/26)) ([56839a7](https://github.com/tyrantkhan/sift/commit/56839a77cca48bf8db07eac063851823e84306b7))
+
+
+### Bug Fixes
+
+* hide the cursor again when the pane regains focus or resizes ([#27](https://github.com/tyrantkhan/sift/issues/27)) ([f97a208](https://github.com/tyrantkhan/sift/commit/f97a2088bbf4644c08b898487fa66a19d26e95b3))
+
 ## [0.1.4](https://github.com/tyrantkhan/sift/compare/v0.1.3...v0.1.4) (2026-10-25)
 
 
