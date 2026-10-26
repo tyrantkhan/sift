@@ -6,18 +6,22 @@ set -euo pipefail
 #
 # Required env vars: PR_TITLE, PR_NUMBER, GITHUB_REPOSITORY, GH_TOKEN
 
-# Priority map — lower index = higher priority
-TYPES=(feat fix refactor perf docs style test build ci chore revert)
-
+# Priority of a conventional commit type: lower is higher, 999 when unknown.
 get_priority() {
-  local t="$1"
-  for i in "${!TYPES[@]}"; do
-    if [[ "${TYPES[$i]}" == "$t" ]]; then
-      echo "$i"
-      return
-    fi
-  done
-  echo "999" # unknown type
+  case "$1" in
+    feat) echo 0 ;;
+    fix) echo 1 ;;
+    refactor) echo 2 ;;
+    perf) echo 3 ;;
+    docs) echo 4 ;;
+    style) echo 5 ;;
+    test) echo 6 ;;
+    build) echo 7 ;;
+    ci) echo 8 ;;
+    chore) echo 9 ;;
+    revert) echo 10 ;;
+    *) echo 999 ;;
+  esac
 }
 
 # Extract type from a conventional commit string (everything before '!', ':', or '(')
