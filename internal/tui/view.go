@@ -18,6 +18,8 @@ func (m Model) View() tea.View {
 	v.AltScreen = true
 	// Where the terminal supports it, held keys arrive marked as repeats, which dropRepeat ignores.
 	v.KeyboardEnhancements.ReportEventTypes = true
+	// Focus events let Update hide the cursor again when the pane comes back; see hideCursor.
+	v.ReportFocus = true
 	v.WindowTitle = "sift · " + clean(m.run.Title)
 	return v
 }

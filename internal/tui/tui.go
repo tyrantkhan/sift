@@ -12,6 +12,7 @@ import (
 	"charm.land/bubbles/v2/viewport"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/ansi"
 
 	"github.com/tyrantkhan/sift/internal/run"
 )
@@ -325,7 +326,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.w, m.h = msg.Width, msg.Height
 		m.layout()
-		return m, nil
+		return m, hideCursor
 	case tea.BackgroundColorMsg:
 		m.setTheme(msg.IsDark())
 		m.refresh(false)
@@ -380,8 +381,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case m.mode == modeFinish && m.run.Ready():
 		m.note, cmd = m.note.Update(msg)
 	}
+	if _, ok := msg.(tea.FocusMsg); ok {
+		cmd = tea.Batch(cmd, hideCursor)
+	}
 	return m, cmd
 }
+
+// hideCursor hides the terminal's cursor again. Bubble Tea hides it once, at start, so a host that shows it later,
+// as Orca can when its pane regains focus or resizes, would leave it wherever sift last drew.
+var hideCursor = tea.Raw(ansi.ResetModeTextCursorEnable)
 
 func (m *Model) updateIntro(k tea.KeyPressMsg) tea.Cmd {
 	switch k.String() {
