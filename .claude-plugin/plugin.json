@@ -3,9 +3,15 @@
   "version": "0.1.4",
   "description": "Hand review findings on plans, specs or code to the human one at a time with sift, answer what they send back, then apply exactly what they decided.",
   "author": {
-    "name": "tyrantkhan"
+    "name": "tyrantkhan",
+    "url": "https://tyrantkhan.github.io"
   },
+  "homepage": "https://github.com/tyrantkhan/sift",
   "repository": "https://github.com/tyrantkhan/sift",
+  "documentationUrl": "https://github.com/tyrantkhan/sift#readme",
+  "supportUrl": "https://github.com/tyrantkhan/sift/issues",
+  "privacyPolicyUrl": "https://github.com/tyrantkhan/sift/blob/main/PRIVACY.md",
+  "termsOfServiceUrl": "https://github.com/tyrantkhan/sift/blob/main/LICENSE",
   "keywords": [
     "review",
     "code-review",
