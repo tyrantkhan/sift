@@ -5,7 +5,12 @@
   "author": {
     "name": "tyrantkhan"
   },
+  "homepage": "https://github.com/tyrantkhan/sift",
   "repository": "https://github.com/tyrantkhan/sift",
+  "documentationUrl": "https://github.com/tyrantkhan/sift#readme",
+  "supportUrl": "https://github.com/tyrantkhan/sift/issues",
+  "privacyPolicyUrl": "https://github.com/tyrantkhan/sift/blob/main/PRIVACY.md",
+  "termsOfServiceUrl": "https://github.com/tyrantkhan/sift/blob/main/LICENSE",
   "keywords": [
     "review",
     "code-review",
