@@ -42,9 +42,8 @@ type (
 )
 
 const (
-	footerHeight = 3
 	inputHeight  = 5
-	maxCardWidth = 100
+	maxCardWidth = 140
 	excerptLines = 40
 	// stackWidth holds the edges of the cards fanned behind the current one.
 	stackWidth = 2
@@ -286,7 +285,19 @@ func (m Model) headerHeight() int {
 	return 1
 }
 
-func (m Model) bodyHeight() int { return max(1, m.h-m.headerHeight()-footerHeight) }
+// footerHeight is the status line and one or two rows of keys, under a rule when there is room.
+func (m Model) footerHeight() int {
+	h := 3
+	if m.oneKeyRow() {
+		h--
+	}
+	if m.h >= 18 {
+		h++
+	}
+	return h
+}
+
+func (m Model) bodyHeight() int { return max(1, m.h-m.headerHeight()-m.footerHeight()) }
 
 // cardOuter is the card's full width, borders included, leaving a margin and room for the stack behind it.
 func (m Model) cardOuter() int { return max(24, min(m.w-2-stackWidth, maxCardWidth)) }

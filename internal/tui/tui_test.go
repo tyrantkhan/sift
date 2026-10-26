@@ -242,6 +242,36 @@ func TestSmallestWindowShowsEverything(t *testing.T) {
 	}
 }
 
+func TestCardAndKeysFollowTheWindowWidth(t *testing.T) {
+	view := func(w, h int) []string {
+		t.Helper()
+		m := press(t, modelWith(t, "Codex", w, h, run.NewFinding{Title: "t", Body: "b"}), "enter")
+		return strings.Split(screen(m), "\n")
+	}
+	lines := view(180, 30)
+	if w := lipgloss.Width(strings.TrimRight(lines[2], " ")); w != 1+maxCardWidth {
+		t.Fatalf("the card's top edge ends at column %d, want %d:\n%s", w, 1+maxCardWidth, strings.Join(lines, "\n"))
+	}
+	// A card this wide fits every key on one row, under a rule across the window.
+	keys := lines[len(lines)-1]
+	if lines[len(lines)-3] != strings.Repeat("─", 180) || !strings.Contains(keys, "a approve") || !strings.Contains(keys, "q quit") {
+		t.Fatalf("want a rule, the status and one row of keys:\n%s", strings.Join(lines[len(lines)-4:], "\n"))
+	}
+
+	// In a narrower pane the keys split: what to decide, then where to go.
+	lines = view(80, 30)
+	if lines[len(lines)-4] != strings.Repeat("─", 80) || !strings.Contains(lines[len(lines)-2], "a approve") ||
+		!strings.Contains(lines[len(lines)-1], "q quit") {
+		t.Fatalf("want a rule, the status and two rows of keys:\n%s", strings.Join(lines[len(lines)-5:], "\n"))
+	}
+
+	// A short window gives the rule's row to the card.
+	lines = view(180, 17)
+	if strings.Contains(strings.Join(lines, "\n"), strings.Repeat("─", 180)) || !strings.Contains(lines[len(lines)-2], "to go") {
+		t.Fatalf("want no rule in a short window:\n%s", strings.Join(lines, "\n"))
+	}
+}
+
 func TestEmptyRunDoesNotPanic(t *testing.T) {
 	root := t.TempDir()
 	p := filepath.Join(t.TempDir(), "plan.md")

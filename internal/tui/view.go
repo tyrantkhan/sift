@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image/color"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	tea "charm.land/bubbletea/v2"
@@ -158,38 +159,59 @@ func (m Model) keys(pairs ...string) string {
 	return " " + strings.Join(out, "  ")
 }
 
-// footer is a status line and two rows of keys: what to decide on top, where to go below. Two short rows fit a
-// split pane where one long row would be cut off.
+// The card's keys: what to decide, then where to go.
+var (
+	decideKeys = []string{"a", "approve", "s", "suggest", "x", "reject", "d", "discuss", "u", "undo"}
+	moveKeys   = []string{"←→", "move", "l", "list", "f", "finish", "?", "help", "q", "quit"}
+)
+
+// oneKeyRow reports whether the card's keys fit on one row within the card's width. Every screen follows it, so
+// the body keeps one height as the screens change.
+func (m Model) oneKeyRow() bool {
+	return lipgloss.Width(m.keys(slices.Concat(decideKeys, moveKeys)...)) <= 1+m.cardOuter()
+}
+
+// footer is a status line and the keys: what to decide, then where to go. They share a row when the card is wide
+// enough and split into two in a narrower pane, where one long row would be cut off. The rule above them spans the
+// window like the header, so in a window wider than the card the card reads as a column set between the two.
 func (m Model) footer() []string {
-	var top, bottom string
+	var top, bottom []string
 	switch m.mode {
 	case modeIntro:
-		top = m.keys("enter", "start", "l", "list")
-		bottom = m.keys("?", "help", "q", "quit")
+		top = []string{"enter", "start", "l", "list"}
+		bottom = []string{"?", "help", "q", "quit"}
 	case modeCard:
-		top = m.keys("a", "approve", "s", "suggest", "x", "reject", "d", "discuss", "u", "undo")
-		bottom = m.keys("←→", "move", "l", "list", "f", "finish", "?", "help", "q", "quit")
+		top, bottom = decideKeys, moveKeys
 	case modeList:
-		top = m.keys("↑↓", "move", "enter", "open", "esc", "back")
-		bottom = m.keys("f", "finish", "q", "quit")
+		top = []string{"↑↓", "move", "enter", "open", "esc", "back"}
+		bottom = []string{"f", "finish", "q", "quit"}
 	case modeInput:
-		top = m.keys("enter", "save", "esc", "cancel")
-		bottom = m.keys("alt+enter", "new line")
+		top = []string{"enter", "save", "esc", "cancel"}
+		bottom = []string{"alt+enter", "new line"}
 	case modeFinish:
 		if m.run.Ready() {
-			top = m.keys("enter", "send to "+m.agentName(), "esc", "back")
-			bottom = m.keys("alt+enter", "new line")
+			top = []string{"enter", "send to " + m.agentName(), "esc", "back"}
+			bottom = []string{"alt+enter", "new line"}
 		} else {
-			top = m.keys("enter", "go there", "esc", "back")
+			top = []string{"enter", "go there", "esc", "back"}
 		}
 	default:
-		top = m.keys("any key", "continue")
+		top = []string{"any key", "continue"}
 	}
 	status := " " + m.counts()
 	if m.flash != "" {
 		status = " " + m.th.fg(m.th.warn).Render("! "+clean(m.flash))
 	}
-	return []string{fit(status, m.w), fit(top, m.w), fit(bottom, m.w)}
+	rows := []string{fit(status, m.w)}
+	if m.oneKeyRow() {
+		rows = append(rows, fit(m.keys(slices.Concat(top, bottom)...), m.w))
+	} else {
+		rows = append(rows, fit(m.keys(top...), m.w), fit(m.keys(bottom...), m.w))
+	}
+	if m.h >= 18 {
+		rows = append([]string{m.th.fg(m.th.faint).Render(strings.Repeat("─", m.w))}, rows...)
+	}
+	return rows
 }
 
 // cardContent is the scrolling inside of the current finding's card.
