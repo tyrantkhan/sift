@@ -59,7 +59,7 @@ func TestHerdrSplitsBesideOrBelowAndRunsTheReview(t *testing.T) {
 		want := []string{
 			"pane layout --pane p1",
 			"pane split --pane p1 --direction " + dir + " --focus",
-			"pane run p9 /bin/sift review --run r1",
+			"pane run p9 /bin/sift review --run r1 && exit",
 		}
 		if got := herdrCalls(t, log); !slices.Equal(got, want) {
 			t.Errorf("pane %v: calls = %q, want %q", size, got, want)
