@@ -113,6 +113,13 @@ func shellLine(argv []string) string {
 	return strings.Join(q, " ")
 }
 
+// typedLine is shellLine for a host that types the command into the new pane's shell, which would otherwise
+// outlive the review. Exiting only on success closes the pane once the human sends or quits, and keeps it open
+// on an error so the human can read it.
+func typedLine(argv []string) string {
+	return shellLine(argv) + " && exit"
+}
+
 // runCmd runs a host's command and returns what it printed. A failure carries the host's own message: the error
 // field of a JSON reply on stderr when there is one, as Herdr prints, else stderr or stdout as printed.
 func runCmd(ctx context.Context, name string, args ...string) ([]byte, error) {
@@ -187,7 +194,7 @@ func (o orca) Open(ctx context.Context, argv []string) error {
 		divider = "vertical"
 	}
 	_, err := runCmd(ctx, o.path, "terminal", "split", "--terminal", o.handle, "--direction", divider,
-		"--command", shellLine(argv), "--json")
+		"--command", typedLine(argv), "--json")
 	return err
 }
 
