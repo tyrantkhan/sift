@@ -142,7 +142,7 @@ func TestOrcaSplitsByTerminalSize(t *testing.T) {
 		if err := h.Open(context.Background(), []string{"/bin/sift", "review"}); err != nil {
 			t.Fatal(err)
 		}
-		want := "terminal split --terminal term-1 --direction " + divider + " --command /bin/sift review --json"
+		want := "terminal split --terminal term-1 --direction " + divider + " --command /bin/sift review && exit --json"
 		if got := calls(t, log); len(got) != 1 || got[0] != want {
 			t.Errorf("size %v: calls = %q, want %q", size, got, want)
 		}

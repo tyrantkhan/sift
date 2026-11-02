@@ -60,6 +60,6 @@ func (h herdr) Open(ctx context.Context, argv []string) error {
 	if err := json.Unmarshal(out, &split); err != nil || split.Result.Pane.PaneID == "" {
 		return fmt.Errorf("herdr: the split did not report its new pane")
 	}
-	_, err = runCmd(ctx, h.path, "pane", "run", split.Result.Pane.PaneID, shellLine(argv))
+	_, err = runCmd(ctx, h.path, "pane", "run", split.Result.Pane.PaneID, typedLine(argv))
 	return err
 }
