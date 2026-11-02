@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/tyrantkhan/sift/compare/v0.1.5...v0.1.6) (2026-11-02)
+
+
+### Bug Fixes
+
+* close the review pane in Orca and Herdr once the review ends ([#29](https://github.com/tyrantkhan/sift/issues/29)) ([3f6057f](https://github.com/tyrantkhan/sift/commit/3f6057fc94c020a259f61984c1ba0e3e7a050748))
+
 ## [0.1.5](https://github.com/tyrantkhan/sift/compare/v0.1.4...v0.1.5) (2026-10-26)
 
 
